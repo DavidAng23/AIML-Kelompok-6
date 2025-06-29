@@ -1,0 +1,24 @@
+{
+    "nyawa:sehat_ekonomi:miskin_pertahanan:lemah_jumlah:sedikit": {
+        "prioritizer_rush": 9.5,
+        "healer_support": 9.770000000000001,
+        "balanced_mix": 1.5862000000000003,
+        "tough_wall": -2.5
+    },
+    "nyawa:sehat_ekonomi:miskin_pertahanan:sedang_jumlah:cukup": {
+        "balanced_mix": 9.5,
+        "prioritizer_rush": 5.300000000000001,
+        "healer_support": 5.3180000000000005
+    },
+    "nyawa:sehat_ekonomi:miskin_pertahanan:sedang_jumlah:banyak": {
+        "fast_overwhelm": 5.0
+    },
+    "nyawa:sehat_ekonomi:cukup_pertahanan:sedang_jumlah:banyak": {
+        "healer_support": 5.0
+    },
+    "nyawa:sehat_ekonomi:cukup_pertahanan:kuat_jumlah:banyak": {},
+    "nyawa:sehat_ekonomi:cukup_pertahanan:lemah_jumlah:sedikit": {
+        "healer_support": -2.5
+    },
+    "nyawa:terluka_ekonomi:cukup_pertahanan:lemah_jumlah:sedikit": {}
+}
