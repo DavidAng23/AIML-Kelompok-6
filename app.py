@@ -40,8 +40,7 @@ class RLWaveAI:
             "healer": {"hp": 12, "speed": 0.9, "reward": 6, "color": "lightblue", "special_behavior": "heal_allies", "heal_range": 100, "heal_amount": 5, "heal_speed": 90}
         }
         
-        # --- PERUBAHAN 1: Menambahkan Definisi Menara di Sisi AI ---
-        # AI sekarang "tahu" tentang karakteristik setiap menara, terutama biayanya.
+        # Definisi Menara di Sisi AI ---
         self.tower_definitions = {
             'basic': { 'cost': 50, 'type': 'basic' },
             'fast': { 'cost': 75, 'type': 'fast' },
@@ -78,28 +77,27 @@ class RLWaveAI:
         except IOError:
             print(f"Error: Could not save Q-Table to {self.q_table_file}.")
 
-    # --- PERUBAHAN 2: Fungsi get_state Dirombak Total ---
-    # Fungsi ini sekarang menganalisis komposisi menara pemain, bukan hanya jumlahnya.
+    # Fungsi menganalisis komposisi menara pemain
     def get_state(self, lives, coins, towers_data):
-        # Keadaan Nyawa (tetap sama)
+        # Keadaan Nyawa 
         if lives > 7: lives_state = "sehat"
         elif lives > 3: lives_state = "terluka"
         else: lives_state = "kritis"
         
-        # Keadaan Ekonomi (tetap sama)
+        # Keadaan Ekonomi 
         if coins < 150: eco_state = "miskin"
         elif coins < 300: eco_state = "cukup"
         else: eco_state = "kaya"
             
-        # Analisis Komposisi Pertahanan (BARU)
+        # Analisis Komposisi Pertahanan 
         tower_investment = defaultdict(int)
         for tower in towers_data:
             tower_type = tower.get('type', 'basic')
             cost = self.tower_definitions.get(tower_type, {}).get('cost', 50)
             tower_investment[tower_type] += cost
         
-        # Kategorikan investasi pada setiap tipe menara
-        # Thresholds (ambang batas) ini bisa disesuaikan untuk mengubah sensitivitas AI
+        # Kategori investasi pada setiap tipe menara
+        # Thresholds (ambang batas) bisa disesuaikan untuk mengubah sensitivitas AI
         def get_investment_category(cost):
             if cost == 0:
                 return "nihil"
@@ -114,9 +112,6 @@ class RLWaveAI:
         fast_state = get_investment_category(tower_investment['fast'])
         heavy_state = get_investment_category(tower_investment['heavy'])
         
-        # State baru yang jauh lebih deskriptif
-        # Contoh State Lama: "nyawa:sehat_ekonomi:cukup_pertahanan:sedang_jumlah:cukup"
-        # Contoh State Baru: "nyawa:sehat_ekonomi:cukup_basic:sedang_fast:sedikit_heavy:nihil"
         state_string = (
             f"nyawa:{lives_state}_ekonomi:{eco_state}_"
             f"basic:{basic_state}_fast:{fast_state}_heavy:{heavy_state}"
