@@ -40,6 +40,14 @@ class RLWaveAI:
             "healer": {"hp": 12, "speed": 0.9, "reward": 6, "color": "lightblue", "special_behavior": "heal_allies", "heal_range": 100, "heal_amount": 5, "heal_speed": 90}
         }
         
+        # --- PERUBAHAN 1: Menambahkan Definisi Menara di Sisi AI ---
+        # AI sekarang "tahu" tentang karakteristik setiap menara, terutama biayanya.
+        self.tower_definitions = {
+            'basic': { 'cost': 50, 'type': 'basic' },
+            'fast': { 'cost': 75, 'type': 'fast' },
+            'heavy': { 'cost': 120, 'type': 'heavy' }
+        }
+
         self.strategy_configs = {
             "balanced_mix": {"basic": 0.4, "fast": 0.2, "tough": 0.15, "prioritizer": 0.1, "healer": 0.15},
             "fast_overwhelm": {"basic": 0.2, "fast": 0.6, "tough": 0.1, "prioritizer": 0.1},
@@ -70,27 +78,50 @@ class RLWaveAI:
         except IOError:
             print(f"Error: Could not save Q-Table to {self.q_table_file}.")
 
-
+    # --- PERUBAHAN 2: Fungsi get_state Dirombak Total ---
+    # Fungsi ini sekarang menganalisis komposisi menara pemain, bukan hanya jumlahnya.
     def get_state(self, lives, coins, towers_data):
+        # Keadaan Nyawa (tetap sama)
         if lives > 7: lives_state = "sehat"
         elif lives > 3: lives_state = "terluka"
         else: lives_state = "kritis"
         
+        # Keadaan Ekonomi (tetap sama)
         if coins < 150: eco_state = "miskin"
         elif coins < 300: eco_state = "cukup"
         else: eco_state = "kaya"
             
-        tower_cost = sum(tower.get('cost', 50) for tower in towers_data)
-        if tower_cost < 200: def_state = "lemah"
-        elif tower_cost < 450: def_state = "sedang"
-        else: def_state = "kuat"
-            
-        num_towers = len(towers_data)
-        if num_towers < 4: count_state = "sedikit"
-        elif num_towers < 8: count_state = "cukup"
-        else: count_state = "banyak"
-            
-        return f"nyawa:{lives_state}_ekonomi:{eco_state}_pertahanan:{def_state}_jumlah:{count_state}"
+        # Analisis Komposisi Pertahanan (BARU)
+        tower_investment = defaultdict(int)
+        for tower in towers_data:
+            tower_type = tower.get('type', 'basic')
+            cost = self.tower_definitions.get(tower_type, {}).get('cost', 50)
+            tower_investment[tower_type] += cost
+        
+        # Kategorikan investasi pada setiap tipe menara
+        # Thresholds (ambang batas) ini bisa disesuaikan untuk mengubah sensitivitas AI
+        def get_investment_category(cost):
+            if cost == 0:
+                return "nihil"
+            elif cost < 150: # (cukup untuk 1-2 menara murah)
+                return "sedikit"
+            elif cost < 350: # (beberapa menara atau 1-2 menara mahal)
+                return "sedang"
+            else: # (investasi besar)
+                return "banyak"
+
+        basic_state = get_investment_category(tower_investment['basic'])
+        fast_state = get_investment_category(tower_investment['fast'])
+        heavy_state = get_investment_category(tower_investment['heavy'])
+        
+        # State baru yang jauh lebih deskriptif
+        # Contoh State Lama: "nyawa:sehat_ekonomi:cukup_pertahanan:sedang_jumlah:cukup"
+        # Contoh State Baru: "nyawa:sehat_ekonomi:cukup_basic:sedang_fast:sedikit_heavy:nihil"
+        state_string = (
+            f"nyawa:{lives_state}_ekonomi:{eco_state}_"
+            f"basic:{basic_state}_fast:{fast_state}_heavy:{heavy_state}"
+        )
+        return state_string
 
     def choose_action(self, state):
         if random.uniform(0, 1) < self.epsilon:
@@ -106,33 +137,44 @@ class RLWaveAI:
         next_max = max(self.q_table[next_state].values()) if self.q_table[next_state] else 0
         new_value = old_value + self.alpha * (reward + self.gamma * next_max - old_value)
         self.q_table[state][action] = new_value
-        print(f"AI LEARN: State='{state}', Action='{action}', Reward={reward}, New Q-Value={new_value:.2f}")
+        print(f"AI LEARN: State='{state}', Action='{action}', Reward={reward:.1f}, New Q-Value={new_value:.2f}")
 
     def learn(self, last_wave_stats, current_lives, current_coins, current_towers):
         if not self.last_state or not self.last_action:
+            print("AI SKIP LEARN: No last state/action.")
             return
 
+        # Reward didasarkan pada performa pemain
         lives_lost = last_wave_stats['initial_lives'] - last_wave_stats['lives_remaining']
+        enemies_defeated = last_wave_stats['enemies_defeated']
         
         reward = 0
+        # Hadiah besar jika pemain tidak kehilangan nyawa
         if lives_lost == 0:
-            reward = 50
+            reward += 50 
+        # Penalti kecil jika kehilangan sedikit nyawa
         elif 1 <= lives_lost <= 2:
-            reward = 10
+            reward -= 15
+        # Penalti besar jika kehilangan banyak nyawa
         else:
-            reward = -25
+            reward -= 40
 
+        # Penalti sangat besar jika pemain kalah total
         if last_wave_stats['lives_remaining'] <= 0:
             reward = -100
+
+        # Sedikit hadiah tambahan berdasarkan musuh yang dikalahkan
+        reward += (enemies_defeated * 0.5)
 
         next_state = self.get_state(current_lives, current_coins, current_towers)
         self.update_q_table(self.last_state, self.last_action, reward, next_state)
 
         if self.epsilon > self.min_epsilon:
             self.epsilon *= self.epsilon_decay
+        
+        return reward
 
     def generate_wave(self, action, current_wave_num, current_stage):
-        # --- PERUBAHAN KESEIMBANGAN: Multiplier lebih agresif ---
         difficulty_multiplier = 1 + (current_wave_num * 0.08) + (current_stage * 0.15)
         total_enemies = int((5 + current_wave_num * 0.8 + current_stage * 2) * random.uniform(0.9, 1.1))
         
@@ -180,7 +222,7 @@ class RLWaveAI:
             "interval_ms": max(200, 1000 - (current_wave_num * 25)),
             "ai_insight": f"RL Agent chose: {action.replace('_', ' ').title()}{insight_modifier_text}",
             "difficulty_factor": self.epsilon,
-            "time_until_next_wave_ms": 5000 
+            "time_until_next_wave_ms": 10000 
         }
 
 wave_ai = RLWaveAI()
@@ -196,8 +238,9 @@ def get_next_wave_api():
     last_wave_stats = data.get('last_wave_stats', None)
     is_full_reset = data.get('is_full_reset', False)
 
+    last_wave_reward = None
     if last_wave_stats and not is_full_reset:
-        wave_ai.learn(last_wave_stats, player_lives, player_coins, player_towers)
+       last_wave_reward = wave_ai.learn(last_wave_stats, player_lives, player_coins, player_towers)
 
     if is_full_reset:
         wave_ai.epsilon = 0.9
@@ -212,31 +255,27 @@ def get_next_wave_api():
     next_wave_data = wave_ai.generate_wave(chosen_action, current_wave, current_stage)
     
     next_wave_data['stage_number'] = current_stage
+
+    next_wave_data['last_wave_reward'] = last_wave_reward
     
     return jsonify(next_wave_data)
 
 def run_flask_app():
     print(f"Starting Flask API on http://localhost:{FLASK_PORT}...")
-    # 'host="0.0.0.0"' membuat server dapat diakses dari luar localhost
     app.run(host="0.0.0.0", port=FLASK_PORT, debug=False, use_reloader=False)
 
 if __name__ == '__main__':
-    # Pastikan utas Flask dimulai sebelum Eel
     flask_thread = threading.Thread(target=run_flask_app)
     flask_thread.daemon = True
     flask_thread.start()
 
-    # Beri sedikit waktu agar server Flask siap
     import time
     time.sleep(1) 
 
-    # --- PERBAIKAN ERROR PORT ---
-    # Mendefinisikan port untuk Eel secara eksplisit
-    eel_port = 8080 # Gunakan port yang berbeda dari default (8000)
+    eel_port = 8080 
 
     try:
         print(f"Starting Eel application on port {eel_port}...")
-        # Menambahkan port ke pemanggilan eel.start
         eel.start('index.html', mode='edge', size=(850, 750), port=eel_port)
     except (OSError, IOError) as e:
         print(f"Failed to start Eel in Edge mode: {e}. Trying Chrome...")

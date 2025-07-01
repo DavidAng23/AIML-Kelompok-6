@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tower Defense AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
         body {
@@ -215,6 +216,23 @@
         .tower-select-btn:hover {
             background-color: #4a678d;
         }
+        .chart-container {
+            background-color: rgba(45, 55, 72, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(160, 174, 192, 0.2);
+        }
+        .chart-container h3 {
+            color: #63b3ed;
+            margin-bottom: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -242,6 +260,15 @@
             <p>Gelombang Berikutnya dalam: <span id="nextWaveCountdown">--</span> detik</p>
             <div id="aiInsight" class="ai-insight-box">AI sedang menganalisis strategi Anda...</div>
         </div>
+    </div>
+    <div class="game-container">
+        <div class="info-panel mt-6">
+            </div>
+    </div>
+    
+    <div class="chart-container">
+        <h3>Perkembangan Reward AI per Gelombang</h3>
+        <canvas id="rewardChart"></canvas>
     </div>
 
     <div id="messageBox" class="message-box hidden"></div>
@@ -310,15 +337,78 @@
         let enemiesDefeatedThisWave = 0;
         let towersLostThisWave = 0;
         let waveStartTime = 0;
+        let rewardChart = null;
+        let chartLabels = [];
+        let chartData = [];
+
+        let isPlacementPhase = false;//INI BARU
 
         let passiveIncomeInterval = null;
 
         // --- PERUBAHAN KESEIMBANGAN: Peran menara dibalik ---
         const towerDefinitions = {
             'basic': { cost: 50, damage: 4, range: 170, attackSpeed: 40, color: 'blue', hp: 40, maxHp: 40 }, // Range jauh, damage kecil
-            'fast': { cost: 75, damage: 3, range: 90, attackSpeed: 15, color: 'cyan', hp: 40, maxHp: 40 }, // Tetap
-            'heavy': { cost: 120, damage: 20, range: 100, attackSpeed: 60, color: 'darkred', hp: 100, maxHp: 100 } // Range dekat, damage besar, HP tebal
+            'fast': { cost: 75, damage: 2, range: 90, attackSpeed: 15, color: 'cyan', hp: 60, maxHp: 60 }, // Tetap
+            'heavy': { cost: 120, damage: 10, range: 100, attackSpeed: 100, color: 'darkred', hp: 100, maxHp: 100 } // Range dekat, damage besar, HP tebal
         };
+        function initializeRewardChart() {
+            if (rewardChart) {
+                rewardChart.destroy();
+            }
+            const chartCtx = document.getElementById('rewardChart').getContext('2d');
+            rewardChart = new Chart(chartCtx, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Reward AI',
+                        data: chartData,
+                        borderColor: '#4299e1',
+                        backgroundColor: 'rgba(66, 153, 225, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Nilai Reward'
+                            },
+                            ticks: { color: '#e2e8f0' },
+                            grid: { color: 'rgba(160, 174, 192, 0.2)' }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Nomor Gelombang'
+                            },
+                            ticks: { color: '#e2e8f0' },
+                            grid: { color: 'rgba(160, 174, 192, 0.2)' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e2e8f0' }
+                        }
+                    }
+                }
+            });
+        }
+
+    
+        function updateRewardChart(waveNum, rewardValue) {
+            if (rewardValue === null || waveNum === 0) return; // Jangan tambahkan data jika tidak ada reward
+            
+            chartLabels.push(`Wave ${waveNum}`);
+            chartData.push(rewardValue);
+            rewardChart.update();
+        }
+
 
         function resizeCanvas() {
             const displayWidth = canvas.clientWidth;
@@ -499,14 +589,24 @@
             }
 
             update() {
+                // --- Logika untuk Perilaku Spesial Musuh ---
                 if (this.specialBehavior === "attack_towers") {
                     this.currentAttackCooldown--;
 
-                    if (!this.targetTower || this.targetTower.hp <= 0) {
-                        this.targetTower = null;
+                    // 1. Cek apakah target yang ada masih valid (tidak hancur atau di luar jangkauan)
+                    if (this.targetTower) {
+                        const dx = this.targetTower.x - this.x;
+                        const dy = this.targetTower.y - this.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (this.targetTower.hp <= 0 || distance > this.attackRange) {
+                            this.targetTower = null; // Hapus target jika tidak valid
+                        }
+                    }
+
+                    // 2. Cari target baru jika tidak punya target yang valid
+                    if (!this.targetTower) {
                         let closestTower = null;
                         let minDistance = Infinity;
-
                         for (const tower of towers) {
                             const dx = tower.x - this.x;
                             const dy = tower.y - this.y;
@@ -520,16 +620,15 @@
                         this.targetTower = closestTower;
                     }
 
-                    if (this.targetTower) {
-                        if (this.currentAttackCooldown <= 0) {
-                            this.targetTower.takeDamage(this.attackDamage);
-                            attackVisuals.push({
-                                x1: this.x, y1: this.y, x2: this.targetTower.x, y2: this.targetTower.y,
-                                alpha: 1, duration: 10, color: 'red'
-                            });
-                            this.currentAttackCooldown = this.attackCooldown;
-                        }
-                        return false;
+                    // 3. Jika sekarang punya target yang valid dan cooldown selesai, serang!
+                    // Logika ini tidak menghentikan pergerakan.
+                    if (this.targetTower && this.currentAttackCooldown <= 0) {
+                        this.targetTower.takeDamage(this.attackDamage);
+                        attackVisuals.push({
+                            x1: this.x, y1: this.y, x2: this.targetTower.x, y2: this.targetTower.y,
+                            alpha: 1, duration: 10, color: 'red'
+                        });
+                        this.currentAttackCooldown = this.attackCooldown;
                     }
                 }
                 else if (this.specialBehavior === "heal_allies") {
@@ -562,6 +661,7 @@
                     }
                 }
 
+                // --- Logika Pergerakan (SELALU DIJALANKAN) ---
                 if (this.pathIndex < this.path.length - 1) {
                     const target = this.path[this.pathIndex + 1];
                     const dx = target.x - this.x;
@@ -577,7 +677,7 @@
                         this.y += (dy / distance) * this.speed;
                     }
                 } else {
-                    // --- PERUBAHAN KESEIMBANGAN: Dapat koin saat nyawa berkurang ---
+                    // Musuh berhasil mencapai ujung jalur
                     const previousLives = lives;
                     lives--;
                     if (lives < previousLives) {
@@ -587,9 +687,9 @@
                     livesElem.textContent = lives;
                     coinsElem.textContent = coins;
                     enemiesLeakedThisWave++;
-                    return true;
+                    return true; // Beri sinyal untuk menghapus musuh dari game
                 }
-                return false;
+                return false; // Musuh masih di dalam jalur
             }
         }
 
@@ -802,6 +902,12 @@
             
             if (gameRunning && enemies.length === 0 && !isRequestingWave && nextWaveTimer === null && waveSpawnInterval === null) {
                 isRequestingWave = true;
+
+                isPlacementPhase = true; 
+                gameStatusElem.textContent = 'Fase Penempatan! Siapkan pertahanan Anda.';
+                addTowerBtn.disabled = false; // Aktifkan tombol tambah menara
+                showMessage('Gelombang Selesai! Anda bisa menempatkan/memindahkan menara.', 'info');
+
                 const lastWaveStats = {
                     wave_number: wave,
                     initial_lives: lastWaveInitialLives,
@@ -879,6 +985,16 @@
 
         const handlePointerDown = (px, py) => {
             if (towerPlacementMode) return;
+
+            if (!isPlacementPhase) {
+            if (selectedTower) {
+                selectedTower.isSelected = false;
+                selectedTower = null;
+                draw();
+            }
+            return;
+        }
+
             for (let i = towers.length - 1; i >= 0; i--) {
                 const tower = towers[i];
                 if (tower.isClicked(px, py)) {
@@ -936,13 +1052,18 @@
         startGameBtn.addEventListener('click', () => {
             if (!gameRunning) {
                 resetGame(true);
+                initializeRewardChart();
                 gameRunning = true;
                 gameOverOverlay.classList.remove('active');
-                gameStatusElem.textContent = 'Game sedang berjalan...';
+
+                isPlacementPhase = true;
+                gameStatusElem.textContent = 'Fase Penempatan Awal. Silakan bangun menara.';
+                addTowerBtn.disabled = false;
                 aiInsightElem.textContent = "AI sedang menganalisis strategi Anda...";
+                
                 animate();
-                showMessage('Game dimulai!', 'info');
-                startNextWaveCountdown(3, null, true);
+                showMessage('Game dimulai! Siapkan pertahanan pertama Anda.', 'info');
+                startNextWaveCountdown(10, null, true);
 
                 // --- PERUBAHAN KESEIMBANGAN: Pendapatan pasif lebih besar ---
                 if (passiveIncomeInterval) clearInterval(passiveIncomeInterval);
@@ -958,6 +1079,10 @@
         });
 
         addTowerBtn.addEventListener('click', () => {
+            if (!isPlacementPhase) {
+            showMessage('Anda hanya bisa menambah menara di antara gelombang.', 'error');
+            return;
+        }
             const towerCost = currentTowerToPlace.cost;
             if (coins >= towerCost) {
                 towerPlacementMode = true;
@@ -991,6 +1116,18 @@
 
         async function requestWaveFromAI(lastWaveStats = null, is_full_reset = false) {
             if (!gameRunning) return;
+
+            isPlacementPhase = false;
+            gameStatusElem.textContent = 'Gelombang sedang berlangsung...';
+            addTowerBtn.disabled = true; // Nonaktifkan tombol tambah menara
+            if (towerPlacementMode) { // Batalkan mode penempatan jika masih aktif
+                towerPlacementMode = false;
+            }
+            if (selectedTower) { // Batalkan seleksi menara
+                selectedTower.isSelected = false;
+                selectedTower = null;
+            }
+        
             if (nextWaveTimer) clearTimeout(nextWaveTimer); nextWaveTimer = null;
             if (countdownDisplayInterval) clearInterval(countdownDisplayInterval); countdownDisplayInterval = null;
 
@@ -1012,6 +1149,11 @@
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
                 const waveData = await response.json();
+                const lastWaveReward = waveData.last_wave_reward;
+                if (lastWaveReward !== null) {
+                // `current_wave` dari request adalah nomor gelombang yang baru saja selesai
+                updateRewardChart(lastWaveStats.wave_number, lastWaveReward);
+            }
                 wave = waveData.wave_number;
                 stage = waveData.stage_number;
                 difficultyFactor = waveData.difficulty_factor;
@@ -1079,12 +1221,22 @@
             gameOverOverlay.classList.remove('active');
             gameStatusElem.textContent = `Memulai Stage ${stage}...`;
             animate();
-            startNextWaveCountdown(3, lastWaveStats, false); 
+            startNextWaveCountdown(10, lastWaveStats, false); 
         }
 
         function resetGame(fullReset = true) {
             gameRunning = false;
-            coins = 100;
+            isPlacementPhase = false;
+
+            if (fullReset) {
+        // Untuk reset total, koin tetap 100
+        coins = 100;
+    } 
+    else {
+        // Koin awal = 100 (sebagai dasar) + 100 untuk setiap stage setelah stage 1.
+        // Formula ini akan menambahkan 100 koin setiap kali stage bertambah.
+        coins = 100 + (stage - 1) * 100;
+    }
             lives = 10;
             wave = 0;
             difficultyFactor = 1.0;
@@ -1093,6 +1245,13 @@
             towerPlacementMode = false;
             attackVisuals = [];
             selectedTower = null;
+            addTowerBtn.disabled = true;
+
+            if (rewardChart) {
+                chartLabels.length = 0;
+                chartData.length = 0;
+                rewardChart.update();
+            }
 
             if (passiveIncomeInterval) clearInterval(passiveIncomeInterval); passiveIncomeInterval = null;
             if (waveSpawnInterval) clearInterval(waveSpawnInterval); waveSpawnInterval = null;

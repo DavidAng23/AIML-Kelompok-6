@@ -1,9 +1,10 @@
 {
     "nyawa:sehat_ekonomi:miskin_pertahanan:lemah_jumlah:sedikit": {
         "prioritizer_rush": 9.5,
-        "healer_support": 9.770000000000001,
+        "healer_support": 13.647152000000002,
         "balanced_mix": 1.5862000000000003,
-        "tough_wall": -2.5
+        "tough_wall": -3.09742,
+        "fast_overwhelm": 6.076476800000001
     },
     "nyawa:sehat_ekonomi:miskin_pertahanan:sedang_jumlah:cukup": {
         "balanced_mix": 9.5,
@@ -20,5 +21,135 @@
     "nyawa:sehat_ekonomi:cukup_pertahanan:lemah_jumlah:sedikit": {
         "healer_support": -2.5
     },
-    "nyawa:terluka_ekonomi:cukup_pertahanan:lemah_jumlah:sedikit": {}
+    "nyawa:terluka_ekonomi:cukup_pertahanan:lemah_jumlah:sedikit": {},
+    "nyawa:sehat_ekonomi:cukup_pertahanan:sedang_jumlah:cukup": {
+        "balanced_mix": 5.0
+    },
+    "nyawa:terluka_ekonomi:miskin_pertahanan:lemah_jumlah:sedikit": {
+        "tough_wall": 5.0
+    },
+    "nyawa:terluka_ekonomi:miskin_pertahanan:sedang_jumlah:cukup": {},
+    "nyawa:sehat_ekonomi:miskin_basic:sedikit_fast:nihil_heavy:nihil": {
+        "healer_support": 10.7887,
+        "fast_overwhelm": 23.791092070400005,
+        "prioritizer_rush": 8.616778576
+    },
+    "nyawa:sehat_ekonomi:miskin_basic:sedikit_fast:sedikit_heavy:nihil": {
+        "healer_support": 5.3500000000000005,
+        "fast_overwhelm": 5.988040000000001,
+        "balanced_mix": 5.73
+    },
+    "nyawa:sehat_ekonomi:miskin_basic:sedang_fast:sedang_heavy:nihil": {
+        "balanced_mix": 15.6828824,
+        "prioritizer_rush": 15.484236,
+        "fast_overwhelm": 6.440972944000001
+    },
+    "nyawa:sehat_ekonomi:miskin_basic:sedang_fast:sedang_heavy:sedikit": {
+        "healer_support": 11.031000000000002,
+        "prioritizer_rush": 5.933
+    },
+    "nyawa:sehat_ekonomi:cukup_basic:sedang_fast:sedang_heavy:sedikit": {
+        "fast_overwhelm": 5.6000000000000005,
+        "healer_support": 5.7
+    },
+    "nyawa:sehat_ekonomi:kaya_basic:sedang_fast:sedang_heavy:sedikit": {
+        "fast_overwhelm": 15.7184
+    },
+    "nyawa:sehat_ekonomi:miskin_basic:nihil_fast:nihil_heavy:nihil": {},
+    "nyawa:sehat_ekonomi:cukup_basic:sedang_fast:sedang_heavy:nihil": {
+        "prioritizer_rush": 5.550000000000001
+    },
+    "nyawa:sehat_ekonomi:kaya_basic:sedang_fast:sedang_heavy:nihil": {
+        "prioritizer_rush": 5.6000000000000005
+    },
+    "nyawa:sehat_ekonomi:cukup_basic:sedang_fast:banyak_heavy:nihil": {
+        "tough_wall": 5.7
+    },
+    "nyawa:sehat_ekonomi:cukup_basic:sedang_fast:banyak_heavy:sedang": {
+        "healer_support": 5.99026
+    },
+    "nyawa:kritis_ekonomi:miskin_basic:sedikit_fast:sedikit_heavy:nihil": {
+        "fast_overwhelm": -1.1
+    },
+    "nyawa:sehat_ekonomi:cukup_basic:sedikit_fast:nihil_heavy:nihil": {
+        "tough_wall": -7.894
+    },
+    "nyawa:terluka_ekonomi:kaya_basic:sedikit_fast:nihil_heavy:nihil": {
+        "fast_overwhelm": 5.45
+    },
+    "nyawa:terluka_ekonomi:miskin_basic:sedikit_fast:sedang_heavy:nihil": {
+        "prioritizer_rush": 5.45
+    },
+    "nyawa:terluka_ekonomi:miskin_basic:sedang_fast:banyak_heavy:nihil": {
+        "fast_overwhelm": 5.550000000000001,
+        "prioritizer_rush": 5.883,
+        "tough_wall": 5.65
+    },
+    "nyawa:terluka_ekonomi:cukup_basic:sedang_fast:banyak_heavy:nihil": {
+        "balanced_mix": 5.6000000000000005
+    },
+    "nyawa:terluka_ekonomi:miskin_basic:banyak_fast:banyak_heavy:nihil": {
+        "tough_wall": 5.7
+    },
+    "nyawa:sehat_ekonomi:cukup_basic:nihil_fast:nihil_heavy:nihil": {
+        "balanced_mix": -4.0
+    },
+    "nyawa:kritis_ekonomi:miskin_basic:sedang_fast:sedikit_heavy:nihil": {
+        "healer_support": 5.45,
+        "tough_wall": 5.5
+    },
+    "nyawa:kritis_ekonomi:miskin_basic:sedang_fast:sedang_heavy:nihil": {
+        "prioritizer_rush": 15.550882000000001,
+        "tough_wall": 5.933
+    },
+    "nyawa:kritis_ekonomi:miskin_basic:sedang_fast:banyak_heavy:nihil": {
+        "healer_support": 5.7
+    },
+    "nyawa:kritis_ekonomi:miskin_basic:sedang_fast:banyak_heavy:sedikit": {
+        "prioritizer_rush": 5.75
+    },
+    "nyawa:kritis_ekonomi:miskin_basic:sedang_fast:sedang_heavy:sedang": {
+        "balanced_mix": 5.75
+    },
+    "nyawa:sehat_ekonomi:miskin_basic:sedikit_fast:sedikit_heavy:sedikit": {
+        "balanced_mix": 5.5,
+        "prioritizer_rush": 5.73,
+        "tough_wall": -3.85
+    },
+    "nyawa:sehat_ekonomi:miskin_basic:sedikit_fast:sedang_heavy:sedikit": {
+        "tough_wall": 5.883
+    },
+    "nyawa:sehat_ekonomi:miskin_basic:sedikit_fast:sedang_heavy:sedang": {
+        "prioritizer_rush": 5.800000000000001
+    },
+    "nyawa:sehat_ekonomi:miskin_basic:sedang_fast:banyak_heavy:sedang": {
+        "fast_overwhelm": 5.75,
+        "prioritizer_rush": 6.1450000000000005,
+        "balanced_mix": 5.800000000000001
+    },
+    "nyawa:sehat_ekonomi:miskin_basic:sedang_fast:banyak_heavy:banyak": {
+        "tough_wall": 5.8500000000000005
+    },
+    "nyawa:sehat_ekonomi:cukup_basic:sedikit_fast:sedikit_heavy:sedikit": {
+        "healer_support": 5.3529800000000005
+    },
+    "nyawa:sehat_ekonomi:cukup_basic:sedikit_fast:sedikit_heavy:nihil": {
+        "balanced_mix": 5.45
+    },
+    "nyawa:sehat_ekonomi:kaya_basic:sedikit_fast:sedikit_heavy:nihil": {
+        "balanced_mix": 10.732
+    },
+    "nyawa:terluka_ekonomi:cukup_basic:sedikit_fast:nihil_heavy:sedikit": {
+        "healer_support": -1.1,
+        "balanced_mix": -1.1
+    },
+    "nyawa:terluka_ekonomi:kaya_basic:sedikit_fast:nihil_heavy:sedikit": {},
+    "nyawa:sehat_ekonomi:kaya_basic:sedikit_fast:nihil_heavy:nihil": {
+        "healer_support": 5.3500000000000005
+    },
+    "nyawa:sehat_ekonomi:miskin_basic:nihil_fast:nihil_heavy:sedikit": {
+        "healer_support": -3.85
+    },
+    "nyawa:terluka_ekonomi:miskin_basic:nihil_fast:nihil_heavy:sedikit": {},
+    "nyawa:kritis_ekonomi:cukup_basic:sedikit_fast:sedikit_heavy:sedikit": {}
 }
